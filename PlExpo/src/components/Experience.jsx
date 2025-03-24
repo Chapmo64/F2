@@ -7,7 +7,7 @@ const Experience = () => {
   const { scene, camera, gl } = useThree();
   const planets = useRef([]);
   const sunRef = useRef(null);
-  const orbits = useRef([]); // Store orbit lines
+  const orbits = useRef([]);
   const texturesLoaded = useRef(false);
 
   // 🌞 Load Textures
@@ -20,36 +20,41 @@ const Experience = () => {
       const sunGeometry = new THREE.SphereGeometry(10, 32, 32);
       const sunMaterial = new THREE.MeshStandardMaterial({ 
         map: sunTexture, 
-        emissive: 0xffaa00, // Makes Sun glow
-        emissiveIntensity: 1.5 
+        emissive: 0xffaa00, 
+        emissiveIntensity: 2.0 
       });
-    
+
       const sun = new THREE.Mesh(sunGeometry, sunMaterial);
-    
-      // 🌞 Create Sunlight (Inside the if block)
-      const sunLight = new THREE.PointLight(0xffffff, 2, 500); // Color: white, Intensity: 2, Max Distance: 500
-      sunLight.position.set(0, 0, 0); // Same position as the Sun
-      sun.add(sunLight); // Attach the light to the Sun
-    
+      sun.castShadow = false; // Prevent Sun from blocking light
+
+      // ☀️ Directional Light (Simulating Sunlight)
+      const sunLight = new THREE.DirectionalLight(0xffffff, 5);
+      sunLight.position.set(50, 50, 50); // Simulates sunlight angle
+      sunLight.castShadow = true;
+      sunLight.shadow.mapSize.width = 4096;
+      sunLight.shadow.mapSize.height = 4096;
+      sunLight.shadow.camera.near = 10;
+      sunLight.shadow.camera.far = 500;
+      sunLight.shadow.bias = -0.0005;
+
+      // 🌍 Hemisphere Light (Soft Global Light)
+      const hemiLight = new THREE.HemisphereLight(0xffffff, 0x222222, 0.8);
+      scene.add(hemiLight); // Adds soft ambient light
+
+      scene.add(sunLight);
       scene.add(sun);
       sunRef.current = sun;
     }
-       
 
-    // 💡 Add Lighting (Only Once)
+    // 💡 Ambient Light (Extra Softness)
     if (planets.current.length === 0) {
-      const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
-      scene.add(ambientLight);
-
-      const sunLight = new THREE.PointLight(0xffffff, 2, 500); // Brightness: 2, Max Distance: 500
-      sunLight.position.set(0, 0, 0); // Place at the Sun’s position
-      scene.add(sunLight);      
-
+      const ambientLight = new THREE.AmbientLight(0xffffff, 0.3);
+      scene.add(ambientLight);      
       camera.position.set(0, 50, 150);
     }
   }, [scene, camera, sunTexture]);
 
-  // 🪐 Planet Data (With Rings)
+  // 🪐 Planet Data
   const planetData = [
     { size: 2, texture: "/img/mercury_hd.jpg", distance: 20, hasRing: false },
     { size: 3, texture: "/img/venus_hd.jpg", distance: 30, hasRing: false },
@@ -67,17 +72,32 @@ const Experience = () => {
     planetData.map((data) => data.texture)
   );
 
-  // 🔄 Create Planets and Rings
+  // 🔄 Create Planets, Rings, and Orbits
   useEffect(() => {
     if (!texturesLoaded.current) {
       planetData.forEach((data, index) => {
         // 🌍 Create Planet
         const geometry = new THREE.SphereGeometry(data.size, 32, 32);
-        const material = new THREE.MeshStandardMaterial({ map: textures[index] });
-        const planet = new THREE.Mesh(geometry, material);
+        const material = new THREE.MeshStandardMaterial({ 
+          map: textures[index], 
+          roughness: 0.7, 
+          metalness: 0, 
+          emissive: 0x111111, 
+          emissiveIntensity: 0.2 
+        });
 
-        // Set initial position
-        planet.position.set(data.distance, 0, 0);
+        const planet = new THREE.Mesh(geometry, material);
+        planet.castShadow = true;
+        planet.receiveShadow = true;
+
+        // Set random orbit positions
+        const angle = Math.random() * Math.PI * 2;
+        planet.position.set(
+          Math.cos(angle) * data.distance, 
+          0, 
+          Math.sin(angle) * data.distance
+        );
+
         scene.add(planet);
 
         // 💍 Create Rings (If applicable)
@@ -87,50 +107,48 @@ const Experience = () => {
             map: ringTexture,
             side: THREE.DoubleSide,
             transparent: true,
-            opacity: 0.6, // Default transparency
+            opacity: 0.6,
           });
 
           const ring = new THREE.Mesh(ringGeometry, ringMaterial);
-          ring.rotation.x = Math.PI / 2; // Default flat ring
+          ring.rotation.x = Math.PI / 2;
 
           if (data.texture.includes("saturn")) {
-            ring.rotation.x = Math.PI / 3; // Saturn has a 27° tilt
+            ring.rotation.x = Math.PI / 3; // Saturn's tilt
           }
 
-          planet.add(ring); // Attach ring to planet
+          planet.add(ring);
         }
 
         planets.current.push({
           mesh: planet,
           distance: data.distance,
-          angle: Math.random() * Math.PI * 2,
+          angle,
         });
       });
 
-      texturesLoaded.current = true; // Prevent reloading
+      texturesLoaded.current = true;
     }
-  }, [scene, textures]);
 
-  // Create Orbit Paths
-  useEffect(() => {
+    // 🛤️ Create Orbit Paths
     planetData.forEach((data) => {
       const orbitGeometry = new THREE.CircleGeometry(data.distance, 128);
       const orbitEdges = new THREE.EdgesGeometry(orbitGeometry);
       const orbitMaterial = new THREE.LineBasicMaterial({
         color: 0xffffff,
-        opacity: 0.1,
+        opacity: 0.3, // Soft orbit visibility
         transparent: true,
       });
 
       const orbit = new THREE.LineSegments(orbitEdges, orbitMaterial);
-      orbit.rotation.x = Math.PI / 2; // Rotate to solar plane
+      orbit.rotation.x = Math.PI / 2; // Rotate to lie flat
       scene.add(orbit);
 
       orbits.current.push({ mesh: orbit, distance: data.distance });
     });
-  }, [scene]);
+  }, [scene, textures]);
 
-  // Animate Orbits & Adjust Orbit Brightness
+  // 🔄 Animate Orbits & Adjust Orbit Brightness
   useFrame(() => {
     planets.current.forEach((planetData, index) => {
       const speed = 0.001 * (index + 1);
@@ -140,12 +158,11 @@ const Experience = () => {
       planetData.mesh.position.x = Math.cos(planetData.angle) * planetData.distance;
       planetData.mesh.position.z = Math.sin(planetData.angle) * planetData.distance;
 
-      // 🎇 Adjust Orbit Brightness Based on Planet Position
+      // Adjust orbit visibility
       const orbit = orbits.current[index].mesh;
       const distanceFromCamera = Math.abs(camera.position.z - planetData.mesh.position.z);
-      const brightnessFactor = 1 - Math.min(distanceFromCamera / 150, 0.8); // Max dim at distance 150
-
-      orbit.material.opacity = brightnessFactor * 0.8 + 0.2; // Keeps opacity between 0.2 - 1
+      const brightnessFactor = 1 - Math.min(distanceFromCamera / 150, 0.8);
+      orbit.material.opacity = brightnessFactor * 0.8 + 0.2;
     });
   });
 

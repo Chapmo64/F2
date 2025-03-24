@@ -5,7 +5,12 @@ import Skybox from "./Skybox";
 
 const SolarSystem = () => {
   return (
-    <Canvas camera={{ position: [0, 50, 100] }} style={{ width: "100vw", height: "100vh" }}>
+    <Canvas
+  shadows
+  camera={{ position: [0, 50, 150] }}
+  gl={{ preserveDrawingBuffer: true, antialias: true, shadowMap: true }}
+  style={{ width: "100vw", height: "100vh" }}
+>
       <Skybox />
       <Experience />
     </Canvas>
