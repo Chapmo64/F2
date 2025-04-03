@@ -1,8 +1,8 @@
-// UI.jsx
+// src/components/UI.jsx
 import React from "react";
 
-const UI = ({ planetInfo, onClose }) => {
-  if (!planetInfo) return null;
+const UI = ({ planet, onClose }) => {
+  if (!planet) return null;
 
   return (
     <div style={{
@@ -17,10 +17,11 @@ const UI = ({ planetInfo, onClose }) => {
       fontFamily: "sans-serif",
       zIndex: 10,
     }}>
-      <h2>{planetInfo.name}</h2>
-      <p><strong>Mass:</strong> {planetInfo.mass}</p>
-      <p><strong>Radius:</strong> {planetInfo.radius} km</p>
-      <p><strong>Gravity:</strong> {planetInfo.gravity} m/s²</p>
+      <h2>{planet.englishName || planet.name}</h2>
+      <p>Mass: {planet.mass ? `${planet.mass.massValue} x 10^${planet.mass.massExponent}` : "N/A"}</p>
+      <p>Radius: {planet.meanRadius ? planet.meanRadius : "N/A"} km</p>
+      <p>Gravity: {planet.gravity ? planet.gravity : "N/A"} m/s²</p>
+      <p>Moons: {planet.moons ? planet.moons.length : 0}</p>
       <button onClick={onClose} style={{
         marginTop: "10px",
         padding: "5px 10px",

@@ -1,10 +1,10 @@
+// src/components/Sun.jsx
 import React from "react";
 import { useLoader } from "@react-three/fiber";
 import * as THREE from "three";
 
 const Sun = () => {
   const sunTexture = useLoader(THREE.TextureLoader, "/img/sun_hd.jpg");
-
   return (
     <mesh castShadow={false}>
       <sphereGeometry args={[10, 32, 32]} />

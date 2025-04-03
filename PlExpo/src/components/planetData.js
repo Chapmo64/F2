@@ -1,12 +1,12 @@
 const planetData = [
-    { name: "Mercury", size: 2, texture: "/img/mercury_hd.jpg", distance: 20, hasRing: false },
-    { name: "Venus", size: 3, texture: "/img/venus_hd.jpg", distance: 30, hasRing: false },
-    { name: "Earth", size: 3.5, texture: "/img/earth_hd.jpg", distance: 40, hasRing: false },
-    { name: "Mars", size: 2.8, texture: "/img/mars_hd.jpg", distance: 50, hasRing: false },
-    { name: "Jupiter", size: 7, texture: "/img/jupiter_hd.jpg", distance: 70, hasRing: false },
-    { name: "Saturn", size: 6, texture: "/img/saturn_hd.jpg", distance: 90, hasRing: true },
-    { name: "Uranus", size: 4.5, texture: "/img/uranus_hd.jpg", distance: 110, hasRing: false },
-    { name: "Neptune", size: 4, texture: "/img/neptune_hd.jpg", distance: 130, hasRing: false },
+    { name: "Mercury", distance: 20, speed: 0.08, rotationSpeed: 0.005, radius: 0.4, texture: "/img/mercury_hd.jpg" },
+    { name: "Venus", distance: 35, speed: 0.03, rotationSpeed: 0.001, radius: 0.95, texture: "/img/venus_hd.jpg" },
+    { name: "Earth", distance: 50, speed: 0.02, rotationSpeed: 0.02, radius: 1, texture: "/img/earth_hd.jpg" },
+    { name: "Mars", distance: 65, speed: 0.015, rotationSpeed: 0.018, radius: 0.53, texture: "/img/mars_hd.jpg" },
+    { name: "Jupiter", distance: 100, speed: 0.008, rotationSpeed: 0.05, radius: 11.2, texture: "/img/jupiter_hd.jpg" },
+    { name: "Saturn", distance: 130, speed: 0.006, rotationSpeed: 0.04, radius: 9.5, texture: "/img/saturn_hd.jpg" },
+    { name: "Uranus", distance: 160, speed: 0.004, rotationSpeed: 0.03, radius: 4, texture: "/img/uranus_hd.jpg" },
+    { name: "Neptune", distance: 190, speed: 0.003, rotationSpeed: 0.028, radius: 3.9, texture: "/img/neptune_hd.jpg" },
   ];
   
   export default planetData;

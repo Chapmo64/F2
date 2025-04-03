@@ -1,44 +1,36 @@
-// Planet.jsx
 import React, { useRef } from "react";
-import { useLoader, useFrame } from "@react-three/fiber";
+import { useFrame, useLoader } from "@react-three/fiber";
 import * as THREE from "three";
-import Ring from "./Ring";
 
-const Planet = ({ name, size, texture, distance, hasRing, speed = 0.01, onPlanetClick }) => {
+const Planet = ({ name, size, texture, distance, speed = 0.01, rotationSpeed = 0.01, onPlanetClick }) => {
   const planetRef = useRef();
-  const angleRef = useRef(Math.random() * Math.PI * 2);
-  const planetTexture = useLoader(THREE.TextureLoader, texture);
+  const planetTexture = useLoader(THREE.TextureLoader, texture || "/textures/default.jpg");
 
   useFrame(({ clock }) => {
-    // Increase the orbit angle based on elapsed time
-    angleRef.current += speed * 0.05;
     if (planetRef.current) {
-      const x = Math.cos(angleRef.current) * distance;
-      const z = Math.sin(angleRef.current) * distance;
-      planetRef.current.position.set(x, 0, z);
-      // Also, let the planet spin on its own axis
-      planetRef.current.rotation.y += 0.01;
+      const t = clock.getElapsedTime() * speed;
+
+      // Orbit movement around the Sun
+      planetRef.current.position.x = Math.cos(t) * distance;
+      planetRef.current.position.z = Math.sin(t) * distance;
+
+      // Self-rotation
+      planetRef.current.rotation.y += rotationSpeed;
     }
   });
 
-  // When the planet is clicked, call onPlanetClick with its name and current position
   const handleClick = (e) => {
-    // Prevent click events from propagating to children
     e.stopPropagation();
     if (onPlanetClick && planetRef.current) {
-      onPlanetClick(name, planetRef.current.position.clone());
+      onPlanetClick(name, planetRef.current);
     }
   };
 
   return (
-    // Using group so that the entire planet and its ring move together
-    <group ref={planetRef} onClick={handleClick}>
-      <mesh>
-        <sphereGeometry args={[size, 32, 32]} />
-        <meshStandardMaterial map={planetTexture} roughness={0.7} metalness={0} />
-      </mesh>
-      {hasRing && <Ring size={size} />}
-    </group>
+    <mesh ref={planetRef} onClick={handleClick}>
+      <sphereGeometry args={[size, 32, 32]} />
+      <meshStandardMaterial map={planetTexture} roughness={0.7} metalness={0} />
+    </mesh>
   );
 };
 

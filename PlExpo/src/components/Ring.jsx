@@ -1,3 +1,4 @@
+// src/components/Ring.jsx
 import React from "react";
 import { useLoader } from "@react-three/fiber";
 import * as THREE from "three";
