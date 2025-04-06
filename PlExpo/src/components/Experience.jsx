@@ -1,3 +1,4 @@
+// Experience.jsx
 import React, { useRef, useState } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { OrbitControls, Stars } from "@react-three/drei";
@@ -6,55 +7,64 @@ import Sun from "./Sun";
 import Planet from "./Planet";
 import Orbit from "./Orbit";
 import planetData from "./planetData";
+import CameraModes from "./CameraModes";
 
+// Smooth camera transition to selected planet
 const CameraController = ({ selectedPlanet }) => {
-  const { camera, gl } = useThree(); // Get camera and WebGL renderer
+  const { camera, gl } = useThree();
   const controlsRef = useRef();
 
   useFrame(() => {
-    if (selectedPlanet && selectedPlanet.mesh) {
-      const { position } = selectedPlanet.mesh;
-      const targetPosition = position.clone().add(new THREE.Vector3(0, 10, 20));
+    if (selectedPlanet?.mesh) {
+      const position = selectedPlanet.mesh.position;
+      const target = position.clone().add(new THREE.Vector3(0, 10, 20));
 
-      camera.position.lerp(targetPosition, 0.05);
+      camera.position.lerp(target, 0.05);
       camera.lookAt(position);
 
       if (controlsRef.current) {
         controlsRef.current.target.lerp(position, 0.1);
+        controlsRef.current.update();
       }
     }
   });
 
-  return <OrbitControls ref={controlsRef} args={[camera, gl.domElement]} />;
+  return (
+    <OrbitControls
+      ref={controlsRef}
+      args={[camera, gl.domElement]}
+      enableDamping
+      dampingFactor={0.1}
+    />
+  );
 };
 
-const RotatingPlanets = ({ onPlanetClick }) => {
+// Planet rotation and orbit
+const RotatingPlanets = ({ onPlanetClick, planetRefs }) => {
   const groupRef = useRef();
-  const planetRefs = useRef([]);
 
   useFrame(({ clock }) => {
     const elapsed = clock.getElapsedTime();
-    if (groupRef.current) {
-      groupRef.current.children.forEach((planet, index) => {
-        const data = planetData[index];
-        if (data) {
-          const angle = elapsed * data.speed;
-          planet.position.x = data.distance * Math.cos(angle);
-          planet.position.z = data.distance * Math.sin(angle);
-          planet.rotation.y += 0.02; // Self-rotation
-        }
-      });
-    }
+    groupRef.current?.children.forEach((planet, i) => {
+      const data = planetData[i];
+      const angle = elapsed * data.speed;
+      planet.position.set(
+        data.distance * Math.cos(angle),
+        0,
+        data.distance * Math.sin(angle)
+      );
+      planet.rotation.y += 0.01;
+    });
   });
 
   return (
     <group ref={groupRef}>
-      {planetData.map((data, index) => (
+      {planetData.map((data, i) => (
         <Planet
-          key={index}
+          key={i}
           {...data}
           onPlanetClick={onPlanetClick}
-          ref={(el) => (planetRefs.current[index] = el)}
+          ref={(el) => (planetRefs.current[i] = el)}
         />
       ))}
     </group>
@@ -63,31 +73,49 @@ const RotatingPlanets = ({ onPlanetClick }) => {
 
 const Experience = ({ onPlanetSelect }) => {
   const [selectedPlanet, setSelectedPlanet] = useState(null);
+  const [cameraMode, setCameraMode] = useState("free");
+  const layout = cameraMode === "top" ? "line" : "orbit";
+  const planetRefs = useRef([]);
 
   const handlePlanetClick = (name, mesh) => {
     if (!mesh) return;
     setSelectedPlanet({ name, mesh });
     if (onPlanetSelect) onPlanetSelect(name);
+    setCameraMode("planet");
   };
 
-  const handleCanvasClick = (event) => {
-    if (!event.intersections || event.intersections.length === 0) {
+  const handleCanvasClick = (e) => {
+    if (!e.intersections || e.intersections.length === 0) {
       setSelectedPlanet(null);
+      setCameraMode("free");
     }
   };
 
   return (
-    <Canvas camera={{ position: [0, 50, 150] }} shadows onPointerMissed={handleCanvasClick}>
-      <ambientLight intensity={0.3} />
-      <Stars radius={300} depth={50} count={5000} factor={4} saturation={0} fade />
-      <Sun />
-      <RotatingPlanets onPlanetClick={handlePlanetClick} />
-      {planetData.map((data, index) => (
-        <Orbit key={index} distance={data.distance} />
-      ))}
-      <CameraController selectedPlanet={selectedPlanet} />
-      <OrbitControls enableDamping={true} dampingFactor={0.05} rotateSpeed={0.8} />
-    </Canvas>
+    <>
+      <div className="view-buttons" style={{ position: 'absolute', top: 20, left: 20, zIndex: 10 }}>
+      <button onClick={() => setCameraMode("free")}>Free View</button>
+      <button onClick={() => setCameraMode("top")}>Top View</button>
+      <button onClick={() => setCameraMode("side")}>Side View</button>
+      </div>
+
+      <Canvas
+        camera={{ position: [0, 50, 150], fov: 60 }}
+        shadows
+        onPointerMissed={handleCanvasClick}
+      >
+        <ambientLight intensity={0.4} />
+        <Stars radius={300} depth={60} count={5000} factor={4} fade />
+        <Sun />
+        <RotatingPlanets onPlanetClick={handlePlanetClick} planetRefs={planetRefs} layout={layout} />
+
+        {planetData.map((planet, i) => (
+          <Orbit key={i} distance={planet.distance} />
+        ))}
+        <CameraModes selectedPlanet={selectedPlanet} cameraMode={cameraMode} />
+
+      </Canvas>
+    </>
   );
 };
 
