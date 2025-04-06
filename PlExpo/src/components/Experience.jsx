@@ -8,6 +8,8 @@ import Planet from "./Planet";
 import Orbit from "./Orbit";
 import planetData from "./planetData";
 import CameraModes from "./CameraModes";
+import RotatingPlanets from "./RotatingPlanets";
+
 
 // Smooth camera transition to selected planet
 const CameraController = ({ selectedPlanet }) => {
@@ -39,37 +41,6 @@ const CameraController = ({ selectedPlanet }) => {
   );
 };
 
-// Planet rotation and orbit
-const RotatingPlanets = ({ onPlanetClick, planetRefs }) => {
-  const groupRef = useRef();
-
-  useFrame(({ clock }) => {
-    const elapsed = clock.getElapsedTime();
-    groupRef.current?.children.forEach((planet, i) => {
-      const data = planetData[i];
-      const angle = elapsed * data.speed;
-      planet.position.set(
-        data.distance * Math.cos(angle),
-        0,
-        data.distance * Math.sin(angle)
-      );
-      planet.rotation.y += 0.01;
-    });
-  });
-
-  return (
-    <group ref={groupRef}>
-      {planetData.map((data, i) => (
-        <Planet
-          key={i}
-          {...data}
-          onPlanetClick={onPlanetClick}
-          ref={(el) => (planetRefs.current[i] = el)}
-        />
-      ))}
-    </group>
-  );
-};
 
 const Experience = ({ onPlanetSelect }) => {
   const [selectedPlanet, setSelectedPlanet] = useState(null);
@@ -80,14 +51,21 @@ const Experience = ({ onPlanetSelect }) => {
   const handlePlanetClick = (name, mesh) => {
     if (!mesh) return;
     setSelectedPlanet({ name, mesh });
+  
+    if (cameraMode !== "top") {
+      setCameraMode("planet");
+    }
+  
     if (onPlanetSelect) onPlanetSelect(name);
-    setCameraMode("planet");
   };
+  
 
   const handleCanvasClick = (e) => {
     if (!e.intersections || e.intersections.length === 0) {
       setSelectedPlanet(null);
-      setCameraMode("free");
+      if (cameraMode !== "top") {
+        setCameraMode("free");
+      }
     }
   };
 
@@ -109,9 +87,7 @@ const Experience = ({ onPlanetSelect }) => {
         <Sun />
         <RotatingPlanets onPlanetClick={handlePlanetClick} planetRefs={planetRefs} layout={layout} />
 
-        {planetData.map((planet, i) => (
-          <Orbit key={i} distance={planet.distance} />
-        ))}
+        {cameraMode !== "top" && planetData.map((planet, i) => (<Orbit key={i} distance={planet.distance} />))}
         <CameraModes selectedPlanet={selectedPlanet} cameraMode={cameraMode} />
 
       </Canvas>

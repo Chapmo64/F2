@@ -33,7 +33,7 @@ const CameraModes = ({ selectedPlanet, cameraMode }) => {
           lookAt = new THREE.Vector3(0, 0, 0);
           break;
         default:
-          targetPos = new THREE.Vector3(0, 80, 180);
+          targetPos = new THREE.Vector3(0, 80, 90);
           lookAt = new THREE.Vector3(0, 0, 0);
       }
 
