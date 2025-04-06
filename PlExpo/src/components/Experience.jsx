@@ -1,15 +1,15 @@
 // Experience.jsx
-import React, { useRef, useState } from "react";
+import React, { useRef, useState, useEffect } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { OrbitControls, Stars } from "@react-three/drei";
 import * as THREE from "three";
+
 import Sun from "./Sun";
 import Planet from "./Planet";
 import Orbit from "./Orbit";
 import planetData from "./planetData";
 import CameraModes from "./CameraModes";
 import RotatingPlanets from "./RotatingPlanets";
-
 
 // Smooth camera transition to selected planet
 const CameraController = ({ selectedPlanet }) => {
@@ -41,40 +41,58 @@ const CameraController = ({ selectedPlanet }) => {
   );
 };
 
-
 const Experience = ({ onPlanetSelect }) => {
   const [selectedPlanet, setSelectedPlanet] = useState(null);
   const [cameraMode, setCameraMode] = useState("free");
+  const [shouldResetView, setShouldResetView] = useState(false);
+
   const layout = cameraMode === "top" ? "line" : "orbit";
   const planetRefs = useRef([]);
 
   const handlePlanetClick = (name, mesh) => {
     if (!mesh) return;
     setSelectedPlanet({ name, mesh });
-  
+    if (onPlanetSelect) onPlanetSelect(name);
+
+    // Only switch to planet view if not in top
     if (cameraMode !== "top") {
       setCameraMode("planet");
     }
-  
-    if (onPlanetSelect) onPlanetSelect(name);
   };
-  
 
   const handleCanvasClick = (e) => {
     if (!e.intersections || e.intersections.length === 0) {
       setSelectedPlanet(null);
-      if (cameraMode !== "top") {
-        setCameraMode("free");
+
+      if (cameraMode === "planet") {
+        if (layout === "line") {
+          // Was in top view → trigger a side reset → then back to free
+          setShouldResetView(true);
+          setCameraMode("side");
+        } else {
+          setCameraMode("free");
+        }
       }
     }
   };
 
+  // Automatically return to free view after showing side view briefly
+  useEffect(() => {
+    if (shouldResetView && cameraMode === "side") {
+      const timeout = setTimeout(() => {
+        setCameraMode("free");
+        setShouldResetView(false);
+      }, 150); // Adjust delay as needed
+      return () => clearTimeout(timeout);
+    }
+  }, [shouldResetView, cameraMode]);
+
   return (
     <>
       <div className="view-buttons" style={{ position: 'absolute', top: 20, left: 20, zIndex: 10 }}>
-      <button onClick={() => setCameraMode("free")}>Free View</button>
-      <button onClick={() => setCameraMode("top")}>Top View</button>
-      <button onClick={() => setCameraMode("side")}>Side View</button>
+        <button onClick={() => setCameraMode("side")}>Default View</button>
+        <button onClick={() => setCameraMode("top")}>Top View</button>
+        <button onClick={() => setCameraMode("free")}>Free View</button>
       </div>
 
       <Canvas
@@ -84,12 +102,27 @@ const Experience = ({ onPlanetSelect }) => {
       >
         <ambientLight intensity={0.4} />
         <Stars radius={300} depth={60} count={5000} factor={4} fade />
+
         <Sun />
-        <RotatingPlanets onPlanetClick={handlePlanetClick} planetRefs={planetRefs} layout={layout} />
 
-        {cameraMode !== "top" && planetData.map((planet, i) => (<Orbit key={i} distance={planet.distance} />))}
-        <CameraModes selectedPlanet={selectedPlanet} cameraMode={cameraMode} />
+        <RotatingPlanets
+          onPlanetClick={handlePlanetClick}
+          planetRefs={planetRefs}
+          layout={layout}
+        />
 
+        {/* Hide orbits in top view */}
+        {cameraMode !== "top" &&
+          planetData.map((planet, i) => (
+            <Orbit key={i} distance={planet.distance} />
+          ))}
+
+        <CameraModes
+          selectedPlanet={selectedPlanet}
+          cameraMode={cameraMode}
+        />
+
+        <CameraController selectedPlanet={selectedPlanet} />
       </Canvas>
     </>
   );
