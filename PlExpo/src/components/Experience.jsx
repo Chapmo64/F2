@@ -2,28 +2,29 @@ import React, { useRef, useState, useEffect } from "react";
 import { Canvas } from "@react-three/fiber";
 import { Stars } from "@react-three/drei";
 import * as THREE from "three";
-
+import PlanetInfo from "./PlanetInfo";
 import Sun from "./Sun";
 import Planet from "./Planet";
 import Orbit from "./Orbit";
 import planetData from "./planetData";
 import CameraModes from "./CameraModes";
 import RotatingPlanets from "./RotatingPlanets";
-
+import { Html } from "@react-three/drei";
 const Experience = ({ onPlanetSelect }) => {
   const [selectedPlanet, setSelectedPlanet] = useState(null);
   const [cameraMode, setCameraMode] = useState("free");
   const [shouldResetView, setShouldResetView] = useState(false);
-
+  const [selectedPlanetName, setSelectedPlanetName] = useState(null);
   const layout = cameraMode === "top" ? "line" : "orbit";
   const planetRefs = useRef([]);
 
   const handlePlanetClick = (name, mesh) => {
     if (!mesh) return;
-    const position = mesh.getWorldPosition(new THREE.Vector3());
-    setSelectedPlanet({ name, mesh, position });
+  
+    setSelectedPlanet({ name, mesh });
+    setSelectedPlanetName(name); // ← show info
     if (onPlanetSelect) onPlanetSelect(name);
-
+  
     if (cameraMode !== "top") {
       setCameraMode("planet");
     }
@@ -60,7 +61,7 @@ const Experience = ({ onPlanetSelect }) => {
         <button onClick={() => setCameraMode("top")}>Top View</button>
         <button onClick={() => setCameraMode("free")}>Free View</button>
       </div>
-
+      <PlanetInfo name={selectedPlanetName} onClose={() => setSelectedPlanetName(null)} />
       <Canvas
         camera={{ position: [0, 50, 150], fov: 60 }}
         shadows
@@ -83,6 +84,8 @@ const Experience = ({ onPlanetSelect }) => {
           planetData.map((planet, i) => (
             <Orbit key={i} distance={planet.distance} />
           ))}
+        
+        
 
         <CameraModes
           selectedPlanet={selectedPlanet}
