@@ -1,7 +1,9 @@
 import React, { useRef, useState, useEffect } from "react";
 import { Canvas } from "@react-three/fiber";
-import { Stars } from "@react-three/drei";
+import { Stars, Html } from "@react-three/drei";
 import * as THREE from "three";
+import { EffectComposer, Bloom } from "@react-three/postprocessing";
+
 import PlanetInfo from "./PlanetInfo";
 import Sun from "./Sun";
 import Planet from "./Planet";
@@ -9,8 +11,8 @@ import Orbit from "./Orbit";
 import planetData from "./planetData";
 import CameraModes from "./CameraModes";
 import RotatingPlanets from "./RotatingPlanets";
-import { Html } from "@react-three/drei";
-import { EffectComposer, Bloom } from "@react-three/postprocessing"; // ← Bloom import
+import ShootingStar from "./ShootingStar";
+import Skybox from "./Skybox";
 
 const Experience = ({ onPlanetSelect }) => {
   const [selectedPlanet, setSelectedPlanet] = useState(null);
@@ -35,7 +37,7 @@ const Experience = ({ onPlanetSelect }) => {
   const handleCanvasClick = (e) => {
     if (!e.intersections || e.intersections.length === 0) {
       setSelectedPlanet(null);
-      setSelectedPlanetName(null); // ← close info panel
+      setSelectedPlanetName(null);
       if (cameraMode === "planet") {
         if (layout === "line") {
           setShouldResetView(true);
@@ -75,13 +77,17 @@ const Experience = ({ onPlanetSelect }) => {
         shadows
         onPointerMissed={handleCanvasClick}
       >
-        {/* Basic Lighting */}
-        <ambientLight intensity={1} />
+        {/* Skybox Background */}
+        <Skybox />
+
+        {/* Lighting */}
+        <ambientLight intensity={2} />
         <directionalLight position={[100, 100, 100]} intensity={0.8} />
         <directionalLight position={[-100, -100, -100]} intensity={0.5} />
 
-        {/* Stars */}
+        {/* Stars + Shooting Star */}
         <Stars radius={300} depth={60} count={5000} factor={4} fade />
+        <ShootingStar />
 
         {/* Glowing Sun */}
         <Sun />
@@ -98,14 +104,9 @@ const Experience = ({ onPlanetSelect }) => {
         {/* Camera Modes */}
         <CameraModes selectedPlanet={selectedPlanet} cameraMode={cameraMode} />
 
-        {/* ✨ Bloom Effect */}
+        {/* Bloom Effect */}
         <EffectComposer>
-          <Bloom
-            intensity={1.2}
-            luminanceThreshold={0.2}
-            luminanceSmoothing={0.9}
-            height={300}
-          />
+          <Bloom intensity={1.2} luminanceThreshold={0.2} luminanceSmoothing={0.9} height={300} />
         </EffectComposer>
       </Canvas>
     </>
