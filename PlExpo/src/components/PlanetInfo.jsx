@@ -1,9 +1,19 @@
-import React, { useEffect, useState } from "react";
-import "./PlanetInfo.css"; // optional for styling
+import React, { useEffect, useState, useRef } from "react";
+import "./PlanetInfo.css";
+
+const satelliteData = {
+  earth: ["Hubble Space Telescope", "ISS", "Landsat 8"],
+  mars: ["Mars Reconnaissance Orbiter", "MAVEN", "ExoMars TGO"],
+  jupiter: ["Juno"],
+  // add more as needed
+};
 
 const PlanetInfo = ({ name, onClose }) => {
   const [planetData, setPlanetData] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [showMoons, setShowMoons] = useState(false);
+  const [showSatellites, setShowSatellites] = useState(false);
+  const panelRef = useRef();
 
   useEffect(() => {
     if (!name) return;
@@ -11,7 +21,9 @@ const PlanetInfo = ({ name, onClose }) => {
     const fetchPlanetData = async () => {
       setLoading(true);
       try {
-        const response = await fetch(`https://api.le-systeme-solaire.net/rest/bodies/${name.toLowerCase()}`);
+        const response = await fetch(
+          `https://api.le-systeme-solaire.net/rest/bodies/${name.toLowerCase()}`
+        );
         const data = await response.json();
         setPlanetData(data);
       } catch (error) {
@@ -24,25 +36,106 @@ const PlanetInfo = ({ name, onClose }) => {
     fetchPlanetData();
   }, [name]);
 
-  if (!name) return null;
+  // Close on outside click
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (
+        panelRef.current &&
+        !panelRef.current.contains(event.target)
+      ) {
+        onClose();
+        setShowMoons(false);
+        setShowSatellites(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [onClose]);
+
+  const toggleMoons = () => {
+    setShowMoons(!showMoons);
+    setShowSatellites(false);
+  };
+
+  const toggleSatellites = () => {
+    setShowSatellites(!showSatellites);
+    setShowMoons(false);
+  };
 
   return (
-    <div className="planet-info-container">
-      <button onClick={onClose} className="close-btn">✖</button>
-      {loading && <p>Loading data...</p>}
-      {planetData && (
-        <>
-          <h2>{planetData.englishName}</h2>
-          <p><strong>Mass:</strong> {planetData.mass?.massValue} × 10^{planetData.mass?.massExponent} kg</p>
-          <p><strong>Gravity:</strong> {planetData.gravity} m/s²</p>
-          <p><strong>Density:</strong> {planetData.density} g/cm³</p>
-          <p><strong>Orbital Period:</strong> {planetData.sideralOrbit} days</p>
-          <p><strong>Rotation Period:</strong> {planetData.sideralRotation} hours</p>
-          <p><strong>Discovered By:</strong> {planetData.discoveredBy || "Unknown"}</p>
-          <p><strong>Discovery Date:</strong> {planetData.discoveryDate || "Unknown"}</p>
-        </>
+    <>
+      {/* Right Info Panel */}
+      <div className={`planet-info-drawer-right ${name ? "open" : ""}`} ref={panelRef}>
+        <div className="panel planet-panel">
+          <button className="delete close-button" onClick={onClose}></button>
+          {loading ? (
+            <p className="has-text-grey-light">Loading data...</p>
+          ) : planetData ? (
+            <>
+              <p className="panel-heading">{planetData.englishName}</p>
+              <div className="panel-block is-block">
+                <ul className="planet-details">
+                  <li><strong>Mass:</strong> {planetData.mass?.massValue} × 10<sup>{planetData.mass?.massExponent}</sup> kg</li>
+                  <li><strong>Gravity:</strong> {planetData.gravity} m/s²</li>
+                  <li><strong>Density:</strong> {planetData.density} g/cm³</li>
+                  <li><strong>Orbit Period:</strong> {planetData.sideralOrbit} days</li>
+                  <li><strong>Rotation Period:</strong> {planetData.sideralRotation} hours</li>
+                  <li><strong>Discovered By:</strong> {planetData.discoveredBy || "Unknown"}</li>
+                  <li><strong>Discovery Date:</strong> {planetData.discoveryDate || "Unknown"}</li>
+                </ul>
+                <p className="planet-description">
+                  {planetData.englishName} is a unique celestial body with its own orbital, gravitational, and physical properties that make it an interesting part of our solar system.
+                </p>
+              </div>
+
+              <div className="dropdown-section-buttons">
+                <button className="button is-link is-small" onClick={toggleMoons}>
+                  {showMoons ? "Hide Moons" : "Show Moons"}
+                </button>
+                <button className="button is-info is-small" onClick={toggleSatellites}>
+                  {showSatellites ? "Hide Satellites" : "Show Satellites"}
+                </button>
+              </div>
+            </>
+          ) : (
+            <p className="has-text-grey-light">No data available.</p>
+          )}
+        </div>
+      </div>
+
+      {/* Moons Box */}
+      {showMoons && (
+        <div className="floating-box left-box moons-box">
+          <p className="panel-heading">Moons</p>
+          <ul>
+            {planetData?.moons?.length > 0 ? (
+              planetData.moons.map((moon, index) => (
+                <li key={index}>{moon.moon}</li>
+              ))
+            ) : (
+              <li>No moons available</li>
+            )}
+          </ul>
+        </div>
       )}
-    </div>
+
+      {/* Satellites Box */}
+      {showSatellites && (
+        <div className="floating-box left-box satellites-box">
+          <p className="panel-heading">Satellites</p>
+          <ul>
+            {satelliteData[name?.toLowerCase()]?.length > 0 ? (
+              satelliteData[name.toLowerCase()].map((sat, index) => (
+                <li key={index}>{sat}</li>
+              ))
+            ) : (
+              <li>No satellites available</li>
+            )}
+          </ul>
+        </div>
+      )}
+    </>
   );
 };
 

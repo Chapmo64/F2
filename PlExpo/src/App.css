@@ -15,4 +15,6 @@
     border-radius: 5px;
     cursor: pointer;
   }
-  
+  .transition-smooth {
+    transition: all 0.4s ease-in-out;
+  }
