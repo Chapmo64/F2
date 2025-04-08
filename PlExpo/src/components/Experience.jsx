@@ -10,6 +10,8 @@ import planetData from "./planetData";
 import CameraModes from "./CameraModes";
 import RotatingPlanets from "./RotatingPlanets";
 import { Html } from "@react-three/drei";
+import { EffectComposer, Bloom } from "@react-three/postprocessing"; // ← Bloom import
+
 const Experience = ({ onPlanetSelect }) => {
   const [selectedPlanet, setSelectedPlanet] = useState(null);
   const [cameraMode, setCameraMode] = useState("free");
@@ -20,11 +22,11 @@ const Experience = ({ onPlanetSelect }) => {
 
   const handlePlanetClick = (name, mesh) => {
     if (!mesh) return;
-  
+
     setSelectedPlanet({ name, mesh });
-    setSelectedPlanetName(name); // ← show info
+    setSelectedPlanetName(name);
     if (onPlanetSelect) onPlanetSelect(name);
-  
+
     if (cameraMode !== "top") {
       setCameraMode("planet");
     }
@@ -33,6 +35,7 @@ const Experience = ({ onPlanetSelect }) => {
   const handleCanvasClick = (e) => {
     if (!e.intersections || e.intersections.length === 0) {
       setSelectedPlanet(null);
+      setSelectedPlanetName(null); // ← close info panel
       if (cameraMode === "planet") {
         if (layout === "line") {
           setShouldResetView(true);
@@ -56,41 +59,54 @@ const Experience = ({ onPlanetSelect }) => {
 
   return (
     <>
-      <div className="view-buttons" style={{ position: 'absolute', top: 20, left: 20, zIndex: 10 }}>
+      {/* View Mode Buttons */}
+      <div className="view-buttons" style={{ position: "absolute", top: 20, left: 20, zIndex: 10 }}>
         <button onClick={() => setCameraMode("side")}>Default View</button>
         <button onClick={() => setCameraMode("top")}>Top View</button>
         <button onClick={() => setCameraMode("free")}>Free View</button>
       </div>
+
+      {/* Planet Info Panel */}
       <PlanetInfo name={selectedPlanetName} onClose={() => setSelectedPlanetName(null)} />
+
+      {/* 3D Canvas */}
       <Canvas
         camera={{ position: [0, 50, 150], fov: 60 }}
         shadows
         onPointerMissed={handleCanvasClick}
       >
+        {/* Basic Lighting */}
         <ambientLight intensity={1} />
         <directionalLight position={[100, 100, 100]} intensity={0.8} />
         <directionalLight position={[-100, -100, -100]} intensity={0.5} />
+
+        {/* Stars */}
         <Stars radius={300} depth={60} count={5000} factor={4} fade />
 
+        {/* Glowing Sun */}
         <Sun />
 
-        <RotatingPlanets
-          onPlanetClick={handlePlanetClick}
-          planetRefs={planetRefs}
-          layout={layout}
-        />
+        {/* Planets */}
+        <RotatingPlanets onPlanetClick={handlePlanetClick} planetRefs={planetRefs} layout={layout} />
 
+        {/* Orbits */}
         {cameraMode !== "top" &&
           planetData.map((planet, i) => (
             <Orbit key={i} distance={planet.distance} />
           ))}
-        
-        
 
-        <CameraModes
-          selectedPlanet={selectedPlanet}
-          cameraMode={cameraMode}
-        />
+        {/* Camera Modes */}
+        <CameraModes selectedPlanet={selectedPlanet} cameraMode={cameraMode} />
+
+        {/* ✨ Bloom Effect */}
+        <EffectComposer>
+          <Bloom
+            intensity={1.2}
+            luminanceThreshold={0.2}
+            luminanceSmoothing={0.9}
+            height={300}
+          />
+        </EffectComposer>
       </Canvas>
     </>
   );

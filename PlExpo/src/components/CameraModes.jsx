@@ -9,7 +9,7 @@ const CameraModes = ({ selectedPlanet, cameraMode }) => {
 
   useFrame(() => {
     let targetPos, lookAt;
-  
+
     if (cameraMode === "planet" && selectedPlanet?.mesh) {
       const pos = selectedPlanet.mesh.getWorldPosition(new THREE.Vector3());
       targetPos = pos.clone().add(new THREE.Vector3(0, 10, 20));
@@ -28,18 +28,19 @@ const CameraModes = ({ selectedPlanet, cameraMode }) => {
       lookAt = new THREE.Vector3(0, 0, 0);
     } else {
       targetPos = new THREE.Vector3(0, 80, 180);
+
     }
-  
+
     if (targetPos && lookAt) {
-      camera.position.lerp(targetPos, 0.05);
+      camera.position.lerp(targetPos, 0.05); // Smooth move
       camera.lookAt(lookAt);
+
       if (controlsRef.current) {
-        controlsRef.current.target.lerp(lookAt, 0.1);
+        controlsRef.current.target.lerp(lookAt, 0.1); // Smooth orbit target
         controlsRef.current.update();
       }
     }
   });
-  
 
   useEffect(() => {
     if (!controlsRef.current) return;

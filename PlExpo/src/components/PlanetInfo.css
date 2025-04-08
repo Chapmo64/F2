@@ -22,6 +22,11 @@
     background-color: #2b2b2b;
     border-radius: 8px;
     padding: 1rem;
+    backdrop-filter: blur(10px);
+    background-color: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+
   }
   
   .panel-block{
@@ -30,6 +35,10 @@
 
   .button.is-link{
     background-color: #11aa89;
+  }
+  
+  .dropdown-section-buttons{
+    background-color: #00000000;
   }
 
   .panel-heading {
@@ -85,6 +94,10 @@
     transform: translateX(-20px);
     animation: slideInLeft 0.3s forwards;
     z-index: 200;
+    backdrop-filter: blur(10px);
+    background-color: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
   }
   
   .left-box {
