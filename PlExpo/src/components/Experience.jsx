@@ -1,6 +1,6 @@
 import React, { useRef, useState, useEffect } from "react";
-import { Canvas } from "@react-three/fiber";
-import { Stars, Html } from "@react-three/drei";
+import { Canvas, useFrame } from "@react-three/fiber";
+import { Stars, Html, Billboard, Text } from "@react-three/drei";
 import * as THREE from "three";
 import { EffectComposer, Bloom } from "@react-three/postprocessing";
 
@@ -77,7 +77,6 @@ const Experience = ({ onPlanetSelect }) => {
         shadows
         onPointerMissed={handleCanvasClick}
       >
-        {/* Skybox Background */}
         <Skybox />
 
         {/* Lighting */}
@@ -85,28 +84,43 @@ const Experience = ({ onPlanetSelect }) => {
         <directionalLight position={[100, 100, 100]} intensity={0.8} />
         <directionalLight position={[-100, -100, -100]} intensity={0.5} />
 
-        {/* Stars + Shooting Star */}
         <Stars radius={300} depth={60} count={5000} factor={4} fade />
         <ShootingStar />
-
-        {/* Glowing Sun */}
         <Sun />
 
-        {/* Planets */}
         <RotatingPlanets onPlanetClick={handlePlanetClick} planetRefs={planetRefs} layout={layout} />
 
-        {/* Orbits */}
         {cameraMode !== "top" &&
           planetData.map((planet, i) => (
             <Orbit key={i} distance={planet.distance} />
           ))}
 
-        {/* Camera Modes */}
+        {/* Orbiting Satellites */}
+        {planetRefs.current.map((ref, i) => {
+          const planet = planetData[i];
+          const isSelected = selectedPlanetName === planet.name;
+
+          return (
+            <group key={`sat-group-${i}`}>
+              {[1, 2].map((n) => (
+                <OrbitingSatellite
+                  key={`dot-${i}-${n}`}
+                  planetMesh={ref}
+                  offset={planet.distance / 10 + n * 1.8}
+                  speed={0.3 + i * 0.05 + n * 0.03}
+                  name={`Satellite ${n}`}
+                  showLabel={isSelected}
+                  glowColor="aqua"
+                />
+              ))}
+            </group>
+          );
+        })}
+
         <CameraModes selectedPlanet={selectedPlanet} cameraMode={cameraMode} />
 
-        {/* Bloom Effect */}
         <EffectComposer>
-          <Bloom intensity={1.2} luminanceThreshold={0.2} luminanceSmoothing={0.9} height={300} />
+          <Bloom intensity={1} luminanceThreshold={0.1} luminanceSmoothing={0.7} height={300} />
         </EffectComposer>
       </Canvas>
     </>
@@ -114,3 +128,52 @@ const Experience = ({ onPlanetSelect }) => {
 };
 
 export default Experience;
+
+// Orbiting satellite with glow + animation
+const OrbitingSatellite = ({ planetMesh, offset, speed, name, showLabel, glowColor }) => {
+  const ref = useRef();
+  const glowRef = useRef();
+
+  useFrame(({ clock }) => {
+    if (planetMesh?.current && ref.current) {
+      const t = clock.getElapsedTime() * speed;
+      const center = planetMesh.current.getWorldPosition(new THREE.Vector3());
+
+      const x = center.x + offset * Math.cos(t);
+      const z = center.z + offset * Math.sin(t);
+      const y = center.y + Math.sin(t * 2) * 0.5;
+
+      ref.current.position.set(x, y, z);
+
+      // Pulsing glow
+      if (glowRef.current) {
+        const scale = 1 + 0.2 * Math.sin(clock.getElapsedTime() * 5);
+        glowRef.current.scale.set(scale, scale, scale);
+      }
+    }
+  });
+
+  return (
+    <group ref={ref}>
+      {/* Glowing core */}
+      <mesh ref={glowRef}>
+        <sphereGeometry args={[0.25, 16, 16]} />
+        <meshStandardMaterial
+          color={glowColor}
+          emissive={glowColor}
+          emissiveIntensity={2}
+          toneMapped={false}
+        />
+      </mesh>
+
+      {/* Label */}
+      {showLabel && (
+        <Billboard>
+          <Text fontSize={0.7} color="white" anchorX="center" position={[0, 0.9, 0]}>
+            {name}
+          </Text>
+        </Billboard>
+      )}
+    </group>
+  );
+};
